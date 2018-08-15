@@ -1,6 +1,8 @@
 #!/usr/bin/vai-agi-python-path
 import numpy as np
 import dialplan
+import librosa
+import soundfile as sf
 
 from scikits.audiolab import Format, Sndfile
 from tempfile import mkstemp
@@ -99,7 +101,15 @@ def create_flac_from(sound_samples):
 
     flac_file.write_frames(np.array(sound_samples))
     __console.log('sound file saved')
-    return temp_sound_file
+
+    __console.log('trimming leading and trailing silence')
+    y, sr = librosa.load(temp_sound_file, None)
+    yt, index = librosa.effects.trim(y, top_db=constants.VOLUME_THRESHOLD)
+    _, temp_sound_file_trimmed = mkstemp('TmpSpeechFile_' + caller_id + '_trimmed.flac')
+    sf.write(temp_sound_file_trimmed, yt, sr, format='flac', subtype='PCM_24')
+    __console.log('trimmed audio saved')
+
+    return temp_sound_file_trimmed
 
 
 def flow_handler():
